@@ -1,6 +1,6 @@
 # 🍽️ Online Food Ordering System — Full Project Description
 
-> **DBMS Mini Project** | Frontend: React.js | Backend: Firebase (by Danush)
+> **DBMS Mini Project** | Frontend: React.js | Backend: Firebase
 
 ---
 
@@ -141,7 +141,7 @@ frontend/
 
 ---
 
-### 📁 Backend — Firebase (by Danush)
+### 📁 Backend — Firebase
 
 ```
 backend/
@@ -286,7 +286,7 @@ Customer sees real-time status update
 | Frontend | React.js (Vite), Tailwind CSS |
 | Routing | React Router v6 |
 | State Management | React Context API |
-| Backend | Firebase (by Danush) |
+| Backend | Firebase |
 | Database | Firestore (NoSQL) |
 | Auth | Firebase Authentication |
 | File Storage |
@@ -343,7 +343,6 @@ Customer sees real-time status update
 
 ### Prerequisites
 - Node.js v18+
-- Firebase project created by Danush
 - `.env` file with Firebase config keys
 
 ### Frontend Setup
@@ -362,16 +361,6 @@ VITE_FIREBASE_STORAGE_BUCKET=your_storage_bucket
 VITE_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
 VITE_FIREBASE_APP_ID=your_app_id
 ```
-
----
-
-## 👨‍💻 Team
-
-| Member | Role |
-|--------|------|
-| **Danush** | Backend — Firebase setup, Firestore schema, Security Rules |
-| **????** | Frontend — React.js UI, Pages, Components, Firebase integration |
-
 ---
 
 *Project for DBMS Course | Online Food Ordering System*
