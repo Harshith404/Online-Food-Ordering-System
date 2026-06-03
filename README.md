@@ -1,41 +1,22 @@
-#Online Food Ordering System — Full Project Description
+# Online Food Ordering System - Architecture and Specifications
 
-> **DBMS Mini Project** | Frontend: React.js | Backend: Firebase
-
----
-
-##Project Overview
-
-The **Online Food Ordering System** is a full-stack web application that allows customers to browse restaurants, view menus, place orders, and track delivery status in real-time. The system supports multiple user roles — **Customer**, **Restaurant Admin**, and **Delivery Agent** — each with a dedicated interface.
-
-The backend is powered by **Firebase** (Firestore + Auth + Realtime DB), and the frontend is built using **React.js** with a clean component-based architecture.
+> **DBMS Capstone Project** | Frontend: React.js | Backend: Firebase Serverless Architecture
 
 ---
 
-##Objectives
+## Project Overview
 
-- Allow customers to register, browse menus, and place food orders online
-- Enable restaurant admins to manage their menu, accept/reject orders
-- Allow delivery agents to view and update delivery status
-- Store and manage all data efficiently using Firebase Firestore (NoSQL DBMS)
-- Demonstrate core DBMS concepts: data modeling, CRUD operations, queries, relationships, and real-time updates
+The **Online Food Ordering System** is a full-stack, enterprise-grade web application designed to facilitate seamless interactions between customers, restaurant administrators, and delivery personnel. The system features a client interface built with React.js and a real-time serverless backend powered by Firebase (Firestore, Auth, and Realtime Database).
+
+The architecture leverages role-based views and security policies to isolate operations, ensuring that customers can place and track orders, restaurant admins can manage menu inventories and assign dispatch drivers, and delivery agents can efficiently claim and complete deliveries.
 
 ---
 
-##User Roles
+## Core System Architecture
 
-| Role | Description |
-|------|-------------|
-| **Customer** | Register/Login, Browse restaurants, Add to cart, Place orders, Track order |
-| **Restaurant Admin** | Manage menu items, View & accept orders, Update order status, Assign delivery agents |
-| **Delivery Agent** | View assigned orders, Update delivery status |
-| **Super Admin** *(optional)* | Manage restaurants and users platform-wide |
+### Frontend React.js Architecture
 
----
-
-## Folder Architecture
-
-###Frontend — React.js
+The client-side application is structured to decouple core business logic (services and state management) from presentational UI components.
 
 ```
 frontend/
@@ -45,7 +26,7 @@ frontend/
 │   └── icons.svg
 │
 ├── src/
-│   ├── assets/                  # Images, icons, fonts
+│   ├── assets/                  # Static assets and design files
 │   │   ├── images/
 │   │   └── icons/
 │   │
@@ -71,12 +52,12 @@ frontend/
 │   │   └── delivery/
 │   │       └── DeliveryCard.jsx
 │   │
-│   ├── pages/                   # Route-level Page Components
+│   ├── pages/                   # Route-level View Components
 │   │   ├── auth/
 │   │   │   ├── Login.jsx
 │   │   │   └── Register.jsx
 │   │   │
-│   │   ├── Profile.jsx          # Shared User Settings Page
+│   │   ├── Profile.jsx          # Shared User Settings and Preferences Page
 │   │   │
 │   │   ├── customer/
 │   │   │   ├── Home.jsx
@@ -96,35 +77,35 @@ frontend/
 │   │       ├── DeliveryDashboard.jsx
 │   │       └── DeliveryHistory.jsx
 │   │
-│   ├── context/                 # React Context (Global State)
+│   ├── context/                 # Context Providers (Global State Management)
 │   │   ├── AuthContext.jsx
 │   │   └── CartContext.jsx
 │   │
-│   ├── hooks/                   # Custom React Hooks
+│   ├── hooks/                   # Custom Hooks
 │   │   └── useAuth.js
 │   │
-│   ├── services/                # Firebase API Calls (Business Logic Layer)
+│   ├── services/                # Backend API & Firebase Service Layer
 │   │   ├── restaurantService.js
 │   │   ├── menuService.js
 │   │   ├── orderService.js
 │   │   └── userService.js
 │   │
-│   ├── firebase/                # Firebase Config & Initialization
+│   ├── firebase/                # Firebase Config and Initialization SDK
 │   │   └── config.js
 │   │
-│   ├── routes/                  # App Routing
+│   ├── routes/                  # Client-side Declarative Routes
 │   │   └── AppRoutes.jsx
 │   │
-│   ├── utils/                   # Helper Functions
+│   ├── utils/                   # Shared Utility Modules
 │   │   └── seedData.js          # Database seeding utility
 │   │
-│   ├── styles/                  # Global CSS / Tailwind config
+│   ├── styles/                  # Styling & Global CSS
 │   │   └── global.css
 │   │
 │   ├── App.jsx
 │   └── main.jsx
 │
-├── .env                         # Firebase keys (never commit)
+├── .env                         # Environment keys (ignored by git)
 ├── .gitignore
 ├── package.json
 └── README.md
@@ -132,24 +113,26 @@ frontend/
 
 ---
 
-### 📁 Backend — Firebase
+### Backend Serverless Architecture
+
+The backend configuration defines security policies and indexing options applied to the Firebase service layer.
 
 ```
 backend/
-├── firebase.json                # Firebase project config
-├── .firebaserc                  # Project alias config
-├── .env                         # Secret keys
+├── firebase.json                # Project deployment settings
+├── .firebaserc                  # Project environment target alias
+├── .env                         # Backend environment configurations
 │
 ├── firestore/
-│   ├── firestore.rules          # Security rules for Firestore
-│   └── firestore.indexes.json   # Composite index definitions
+│   ├── firestore.rules          # Security rules for Firestore data isolation
+│   └── firestore.indexes.json   # Composite indexing configuration
 │
 └── README.md
 ```
 
 ---
 
-## 🗃️ Database Design (Firestore Collections)
+## Database Design (Firestore Collections)
 
 ### Collection: `users`
 ```
@@ -160,8 +143,8 @@ users/{userId}
 ├── phone: string
 ├── role: "customer" | "admin" | "delivery"
 ├── address: string
-├── profileImage: string (Base64 JPEG data URL or external link)
-├── profilePicUrl: string (Base64 JPEG data URL or external link)
+├── profileImage: string (Compressed Base64 data URL or validated external link)
+├── profilePicUrl: string (Compressed Base64 data URL or validated external link)
 └── createdAt: timestamp
 ```
 
@@ -169,7 +152,7 @@ users/{userId}
 ```
 restaurants/{restaurantId}
 ├── name: string
-├── ownerId: string (ref → users)
+├── ownerId: string (Reference -> users.uid)
 ├── cuisineType: string
 ├── imageUrl: string
 ├── rating: number
@@ -181,7 +164,7 @@ restaurants/{restaurantId}
 ### Collection: `menu_items`
 ```
 menu_items/{itemId}
-├── restaurantId: string (ref → restaurants)
+├── restaurantId: string (Reference -> restaurants.id)
 ├── name: string
 ├── description: string
 ├── price: number
@@ -193,14 +176,14 @@ menu_items/{itemId}
 ### Collection: `orders`
 ```
 orders/{orderId}
-├── customerId: string (ref → users)
-├── restaurantId: string (ref → restaurants)
+├── customerId: string (Reference -> users.uid)
+├── restaurantId: string (Reference -> restaurants.id)
 ├── items: [
 │   { itemId, name, quantity, price }
 │   ]
 ├── totalAmount: number
 ├── status: "pending" | "accepted" | "preparing" | "out_for_delivery" | "delivered" | "cancelled"
-├── deliveryAgentId: string (ref → users)
+├── deliveryAgentId: string (Reference -> users.uid)
 ├── deliveryAddress: string
 ├── paymentMethod: "COD" | "online"
 ├── isPaid: boolean
@@ -209,157 +192,122 @@ orders/{orderId}
 
 ---
 
-## 🔑 Core & Premium Features
+## Technical Specifications and Features
 
-### 👤 User Settings & Profile Pictures (Offline Friendly)
-- **Profile Configuration**: Accessible by all roles to configure personal information (Name, Phone, and Address).
-- **Default Avatar Grid**: Select from 6 pre-defined food-themed avatars (Chef, Delivery Rider, Pizza, Burger, Coffee, Dessert).
-- **External Image URLs**: Enter and validate direct image links (Unsplash, Cloudinary, etc.) with automatic Google Drive sharing link conversion and rendering safety checks.
-- **Compressed Base64 Uploads**: Bypasses Firebase Storage entirely. Compresses local file uploads to ~300x300 JPEG at 70% quality, generating light Base64 data URLs (10-30KB) stored directly in Firestore (fully compatible with free/Spark tier limits).
+### User Profile Management & Resource Optimization
+* **Direct Image Upload (Base64 Compression)**: Bypasses external object storage storage constraints by utilizing client-side image compression. Local file selections undergo HTML5 Canvas downscaling (max resolution: 300x300 pixels, JPEG quality: 70%). The resulting compact Base64 data string (typically 10-30KB) is written directly to the user's Firestore document.
+* **External URL Validation**: Accepts direct image URLs (e.g., Unsplash, Cloudinary). Implements a browser-level DOM validation mechanism (`new Image()`) that performs cross-origin checking via `onload` and `onerror` handlers.
+* **Google Drive Link Resolver**: Automatically intercepts Google Drive sharing URLs (e.g., `drive.google.com` or `drive.usercontent.google.com`) and resolves them into web-renderable content stream links (`docs.google.com/uc?export=view&id={id}`).
+* **Preset Avatar System**: Implements a zero-latency fallback grid containing pre-defined, vector-rendered avatars representing different profiles.
 
-### 🔑 Security & Controls
-- **Show/Hide Password Toggle**: Eye icon controls on Login and Register screens to toggle character visibility.
-- **Role-Based Routing**: Access-restricted dashboards for Customers, Restaurant Admins, and Delivery Agents.
+### Access Control and Authentication
+* **Role-Based Routing**: Restricts application views via route-level guards (`ProtectedRoute`). Only authenticated users with valid permissions can access their corresponding dashboard (Customer, Admin, Delivery).
+* **Credential Masking**: Offers secure authentication pages with character visibility toggles (Show/Hide password) implemented natively in custom input fields.
+* **Secure Firestore Policies**: Data-isolation policies are configured via Firestore Rules to restrict database writes based on current authentication state and role.
 
-### 🛒 Customer Interface
-- Sign up / Login (Firebase Auth)
-- Browse restaurants with warm visual styling
-- View menus with availability indicators
-- Add items to cart (enforces single restaurant selection)
-- Place order with automatic address loading
-- Real-time order status tracking with timeline progression
-- View full order history
+### Customer Client interface
+* User Authentication powered by Firebase Auth.
+* Interactive restaurant directory.
+* Advanced menu viewing with real-time item availability indicators.
+* Cart subsystem with business rules preventing cross-restaurant item additions.
+* One-click checkout with automatic shipping address retrieval.
+* Reactive order tracker utilizing real-time Firestore listeners.
 
-### 💼 Restaurant Admin Dashboard
-- Manage menus (Add, Edit, and Delete items)
-- View real-time incoming orders
-- Accept/Reject orders
-- Update preparation state
-- **Direct Rider Assignment**: Dropdown selector to assign delivery agents directly from the admin dashboard
+### Restaurant Administration Dashboard
+* Inventory Management: Full CRUD interfaces to manage menu items.
+* Live Order Monitor: Active listeners tracking incoming order streams.
+* Order Lifecycle Control: Interactive state transitions (Pending, Preparing, Out for Delivery).
+* Direct Driver Dispatch: Direct delivery agent assignment from a dropdown query of active delivery personnel.
 
-### 🚴 Delivery Agent Panel
-- Claim available orders in the area
-- Update statuses (Picked up → Delivered)
-- View delivery history
+### Delivery Agent Subsystem
+* Regional Dispatch Console: Claims pending delivery runs.
+* Real-time Delivery Tracking: Updates dispatch status in real-time.
+* Historical delivery logs tracking completed tasks.
 
 ---
 
-## 🔄 Application Flow
+## Application Transaction Workflow
 
 ```
-Customer Registers / Logs In
+Customer Registers / Authenticates
         ↓
-Browse Restaurants → Select Restaurant
+Browse Restaurant Directory → Choose Target Restaurant
         ↓
-View Menu → Add to Cart
+Explore Menu Inventory → Populate Cart (enforces single restaurant)
         ↓
-Checkout → Enter Address → Place Order
+Initiate Checkout → Resolve Delivery Address → Dispatch Order
         ↓
-Order stored in Firestore (status: "pending")
+Document Saved to Firestore (status: "pending")
         ↓
-Restaurant Admin sees order → Accepts & Assigns Delivery Agent
+Admin Panel Receives Event Stream → Accept Order & Assign Delivery Agent
         ↓
-Admin updates → "preparing" → "out_for_delivery"
+State Transition: "preparing" → "out_for_delivery"
         ↓
-Delivery Agent claims order → Updates (status: "delivered")
+Rider Claims Order → Complete Run → State Transition: "delivered"
         ↓
-Customer sees real-time status update
-```
-
----
-
-## 🛠️ Tech Stack
-
-| Layer | Technology |
-|-------|-----------|
-| Frontend | React.js (Vite), Tailwind CSS v3 |
-| Routing | React Router v7 |
-| State Management | React Context API |
-| Backend | Firebase |
-| Database | Firestore (NoSQL) |
-| Auth | Firebase Authentication |
-| Storage | Base64 in Firestore (Spark Plan friendly) |
-| Real-time | Firestore onSnapshot listeners |
-| Hosting | Vercel |
-
----
-
-## 🔐 Security Rules (Firestore Overview)
-
-- Only authenticated users can read/write
-- Customers can only read their own orders
-- Admins can only modify their own restaurant's data
-- Delivery agents can only update order status (not create/delete)
-- Menu items are readable by all, writable only by restaurant admin
-
----
-
-## 📦 NPM Packages (Frontend)
-
-```json
-{
-  "dependencies": {
-    "react": "^19.x",
-    "react-dom": "^19.x",
-    "react-router-dom": "^7.x",
-    "firebase": "^12.x",
-    "tailwindcss": "^3.x",
-    "axios": "^1.x",
-    "react-toastify": "^11.x",
-    "react-icons": "^5.x"
-  }
-}
+Customer View updates Reactively via onSnapshot Listener
 ```
 
 ---
 
-## 📋 DBMS Concepts Demonstrated
+## Technology Stack
 
-| Concept | How it's used |
-|---------|--------------|
-| **Data Modeling** | Firestore collections with structured documents |
-| **CRUD Operations** | Create orders, Read menus, Update status, Delete cart items |
-| **Relationships** | orders → users, orders → restaurants, menu_items → restaurants |
-| **Indexing** | Firestore composite indexes for order queries |
-| **Real-time Queries** | `onSnapshot` for live order tracking |
-| **Transactions / Batches** | Atomic order placement |
-| **Authentication** | Firebase Auth with role-based access |
-| **Security** | Firestore Security Rules |
+| Layer | Component | Specification |
+|-------|-----------|---------------|
+| Frontend | Library | React.js (Vite configuration) |
+| Styling | Architecture | Tailwind CSS v3 |
+| Routing | Library | React Router v7 |
+| State | Framework | React Context API |
+| Backend | Platform | Firebase Serverless |
+| Database | System | Cloud Firestore NoSQL DBMS |
+| Identity | Security | Firebase Authentication |
+| Storage | Technique | Inline Base64 Data URL Compression |
+| Updates | Protocol | Firestore Real-Time Streams (onSnapshot) |
+| Hosting | Environment | Vercel Deployment |
 
 ---
 
-## 🚀 Getting Started
+## Database Management System Concepts Demonstrated
+
+* **Data Modeling**: Logical schema abstraction represented within schema-less, document-oriented Firestore collections.
+* **Data Isolation and Security Rules**: Server-side validation rules specifying access-control policies based on user authentication tokens.
+* **CRUD Execution**: Standardized read/write patterns covering user signups, menu modifications, status updates, and order creation.
+* **Database Relationships**: One-to-Many and Many-to-Many logical connections across `orders`, `users`, `restaurants`, and `menu_items` handled via document reference fields.
+* **Composite Query Optimization**: Index configurations defined to allow multi-parameter querying (e.g., sorting orders by creation time while filtering by agent ID).
+* **Real-time Event Subscriptions**: Bypasses traditional HTTP polling by leveraging WebSockets-based real-time event streaming (`onSnapshot`).
+* **Atomicity & Batch Writes**: Guarantees database integrity during order placement by atomically creating orders and managing transaction logs.
+
+---
+
+## Setup and Deployment
 
 ### Prerequisites
-- Node.js v18+
-- Firebase project created by Danush
-- `.env` file with Firebase config keys
+* Node.js v18.0.0 or higher
+* Configured Firebase project credentials
+* `.env` file containing client configuration targets
 
-### Frontend Setup
-```bash
-cd frontend
-npm install
-npm run dev
-```
+### Installation
+1. Install client-side dependencies:
+   ```bash
+   cd frontend
+   npm install
+   ```
+2. Launch the developer environment:
+   ```bash
+   npm run dev
+   ```
 
-### Environment Variables (`.env`)
+### Client Environment Variables (`.env`)
+Create a file named `.env` in the root of the `/frontend` directory:
 ```env
-VITE_FIREBASE_API_KEY=your_api_key
-VITE_FIREBASE_AUTH_DOMAIN=your_auth_domain
-VITE_FIREBASE_PROJECT_ID=your_project_id
-VITE_FIREBASE_STORAGE_BUCKET=your_storage_bucket
-VITE_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
-VITE_FIREBASE_APP_ID=your_app_id
+VITE_FIREBASE_API_KEY=your_firebase_api_key
+VITE_FIREBASE_AUTH_DOMAIN=your_firebase_auth_domain
+VITE_FIREBASE_PROJECT_ID=your_firebase_project_id
+VITE_FIREBASE_STORAGE_BUCKET=your_firebase_storage_bucket
+VITE_FIREBASE_MESSAGING_SENDER_ID=your_firebase_messaging_sender_id
+VITE_FIREBASE_APP_ID=your_firebase_app_id
+VITE_FIREBASE_DATABASE_URL=your_firebase_database_url
 ```
-
----
-
-## 👨‍💻 Team
-
-| Member | Role |
-|--------|------|
-| **Danush** | Backend — Firebase setup, Firestore schema, Security Rules |
-| **????** | Frontend — React.js UI, Pages, Components, Firebase integration |
 
 ---
 
