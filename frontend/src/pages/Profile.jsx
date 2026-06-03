@@ -4,7 +4,7 @@ import { userService } from '../services/userService';
 import { storage } from '../firebase/config';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import Loader from '../components/common/Loader';
-import { MdPerson, MdPhone, MdLocationOn, MdEmail, MdCameraAlt, MdSave } from 'react-icons/md';
+import { MdPerson, MdPhone, MdLocationOn, MdEmail, MdCameraAlt, MdSave, MdLink, MdCloudUpload } from 'react-icons/md';
 
 const defaultAvatars = [
   { name: 'Chef', url: 'https://images.unsplash.com/photo-1577219491135-ce391730fb2c?w=150&auto=format&fit=crop&q=60' },
@@ -23,7 +23,9 @@ const Profile = () => {
     address: currentUser?.address || '',
     profilePicUrl: currentUser?.profilePicUrl || ''
   });
+  const [imageUrlInput, setImageUrlInput] = useState('');
   const [uploading, setUploading] = useState(false);
+  const [urlUploading, setUrlUploading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [success, setSuccess] = useState(false);
 
@@ -64,6 +66,41 @@ const Profile = () => {
       alert("Firebase Storage is not enabled in your console. Using local preview temporarily. You can also select a default avatar below!");
     } finally {
       setUploading(false);
+    }
+  };
+
+  const handleUrlUpload = async () => {
+    if (!imageUrlInput.trim()) {
+      alert("Please enter a valid image URL first.");
+      return;
+    }
+    setUrlUploading(true);
+    try {
+      // Attempt to fetch the image to upload it to Firebase Storage
+      const response = await fetch(imageUrlInput);
+      if (!response.ok) throw new Error("Failed to fetch image from URL");
+      
+      const blob = await response.blob();
+      if (!blob.type.startsWith('image/')) {
+        throw new Error("The URL does not point to a valid image.");
+      }
+      
+      const storageRef = ref(storage, `profile_pics/${currentUser.uid}`);
+      await uploadBytes(storageRef, blob);
+      const url = await getDownloadURL(storageRef);
+      
+      setFormData((prev) => ({ ...prev, profilePicUrl: url }));
+      setImageUrlInput('');
+      alert("Profile picture fetched and uploaded to storage successfully!");
+    } catch (err) {
+      console.warn("Failed to fetch image via browser (possibly CORS). Applying directly as image URL instead.", err);
+      
+      // Fallback: apply the URL directly to the profile picture
+      setFormData((prev) => ({ ...prev, profilePicUrl: imageUrlInput }));
+      setImageUrlInput('');
+      alert("Image URL applied! (Note: Could not upload to storage due to browser CORS/security policies, but it will be displayed using the external link.)");
+    } finally {
+      setUrlUploading(false);
     }
   };
 
@@ -138,8 +175,43 @@ const Profile = () => {
           {uploading && <span className="text-xs text-primary-500 font-bold animate-pulse">Uploading file...</span>}
 
           <p className="text-[10px] text-slate-400 text-center leading-relaxed">
-            Hover and click the photo to upload a file, or select a default avatar from the options below.
+            Hover and click the photo to upload a file, select a default avatar below, or paste a direct image URL.
           </p>
+
+          <div className="w-full pt-3 border-t border-slate-100 space-y-2">
+            <label className="block text-[11px] font-bold text-slate-500 text-left flex items-center gap-1">
+              <MdLink size={14} className="text-slate-400" />
+              Upload Image via URL
+            </label>
+            <div className="flex gap-2">
+              <input
+                type="url"
+                value={imageUrlInput}
+                onChange={(e) => setImageUrlInput(e.target.value)}
+                placeholder="https://example.com/image.jpg"
+                className="flex-1 rounded-xl border border-slate-200 px-3 py-1.5 text-xs text-slate-800 placeholder-slate-400 focus:border-primary-500 focus:ring-1 focus:ring-primary-500 outline-none transition-all bg-white"
+              />
+              <button
+                type="button"
+                onClick={handleUrlUpload}
+                disabled={urlUploading || !imageUrlInput.trim()}
+                className="rounded-xl bg-primary-500 hover:bg-primary-600 text-white font-bold text-xs px-3 py-1.5 shadow-sm hover:shadow transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-1"
+                title="Fetch image and upload to storage"
+              >
+                {urlUploading ? (
+                  <span className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+                ) : (
+                  <MdCloudUpload size={14} />
+                )}
+                <span>Upload</span>
+              </button>
+            </div>
+            {formData.profilePicUrl && formData.profilePicUrl.startsWith('http') && !formData.profilePicUrl.includes('firebasestorage') && (
+              <p className="text-[9px] text-amber-600 font-medium leading-normal bg-amber-50 rounded-lg p-1.5 border border-amber-100">
+                ⚠️ Current picture is hosted externally. Keep it or upload it to save permanently.
+              </p>
+            )}
+          </div>
         </div>
 
         {/* Form Details Card */}
