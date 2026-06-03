@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import useAuth from '../../hooks/useAuth';
 import { restaurantService } from '../../services/restaurantService';
-import { MdPerson, MdEmail, MdPhone, MdLock, MdLocationOn, MdFastfood } from 'react-icons/md';
+import { MdPerson, MdEmail, MdPhone, MdLock, MdLocationOn, MdFastfood, MdVisibility, MdVisibilityOff } from 'react-icons/md';
 import { validatePhone, validateEmail } from '../../utils/validators';
 
 const Register = () => {
@@ -16,6 +16,7 @@ const Register = () => {
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const { registerUser } = useAuth();
 
   const handleChange = (e) => {
@@ -210,14 +211,21 @@ const Register = () => {
                   <MdLock size={20} />
                 </div>
                 <input
-                  type="password"
+                  type={showPassword ? 'text' : 'password'}
                   name="password"
                   required
                   value={formData.password}
                   onChange={handleChange}
-                  className="w-full rounded-xl border border-slate-200 pl-10 pr-4 py-2.5 text-slate-800 placeholder-slate-400 focus:border-primary-500 focus:ring-1 focus:ring-primary-500 outline-none transition-all"
+                  className="w-full rounded-xl border border-slate-200 pl-10 pr-12 py-2.5 text-slate-800 placeholder-slate-400 focus:border-primary-500 focus:ring-1 focus:ring-primary-500 outline-none transition-all"
                   placeholder="••••••••"
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute inset-y-0 right-0 flex items-center pr-3.5 text-slate-400 hover:text-slate-650 transition-colors focus:outline-none"
+                >
+                  {showPassword ? <MdVisibilityOff size={20} /> : <MdVisibility size={20} />}
+                </button>
               </div>
             </div>
           </div>
