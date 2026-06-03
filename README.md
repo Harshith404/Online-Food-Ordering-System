@@ -159,21 +159,6 @@ backend/
 │       ├── orders.md
 │       └── delivery_agents.md
 │
-├── functions/                   # Firebase Cloud Functions
-│   ├── index.js                 # Entry point
-│   ├── package.json
-│   └── src/
-│       ├── auth/
-│       │   └── onUserCreate.js  # Trigger: new user → set role
-│       ├── orders/
-│       │   ├── onOrderCreate.js # Trigger: notify restaurant
-│       │   └── onOrderUpdate.js # Trigger: notify customer
-│       └── utils/
-│           └── sendNotification.js
-│
-├── storage/
-│   └── storage.rules            # Firebase Storage security rules
-│
 └── README.md
 ```
 
@@ -260,7 +245,6 @@ cart/{userId}
 - Login with admin account
 - Dashboard with order statistics
 - Add / Edit / Delete menu items
-- Upload food images (Firebase Storage)
 - View incoming orders in real-time
 - Accept / Reject / Update order status
 
@@ -305,7 +289,7 @@ Customer sees real-time status update
 | Backend | Firebase (by Danush) |
 | Database | Firestore (NoSQL) |
 | Auth | Firebase Authentication |
-| File Storage | Firebase Storage |
+| File Storage |
 | Real-time | Firestore onSnapshot listeners |
 | Hosting | Firebase Hosting |
 
@@ -385,7 +369,7 @@ VITE_FIREBASE_APP_ID=your_app_id
 
 | Member | Role |
 |--------|------|
-| **Danush** | Backend — Firebase setup, Firestore schema, Cloud Functions, Security Rules |
+| **Danush** | Backend — Firebase setup, Firestore schema, Security Rules |
 | **????** | Frontend — React.js UI, Pages, Components, Firebase integration |
 
 ---
