@@ -1,8 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import useAuth from '../hooks/useAuth';
 import { userService } from '../services/userService';
-import { storage } from '../firebase/config';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import Loader from '../components/common/Loader';
 import { MdPerson, MdPhone, MdLocationOn, MdEmail, MdCameraAlt, MdSave, MdLink, MdCloudUpload } from 'react-icons/md';
 
@@ -21,7 +19,8 @@ const Profile = () => {
     name: currentUser?.name || '',
     phone: currentUser?.phone || '',
     address: currentUser?.address || '',
-    profilePicUrl: currentUser?.profilePicUrl || ''
+    profilePicUrl: currentUser?.profilePicUrl || currentUser?.profileImage || '',
+    profileImage: currentUser?.profileImage || currentUser?.profilePicUrl || ''
   });
   const [imageUrlInput, setImageUrlInput] = useState('');
   const [uploading, setUploading] = useState(false);
@@ -32,11 +31,14 @@ const Profile = () => {
   // Sync form state if context loads late or user changes (only runs once on mount/user load)
   useEffect(() => {
     if (currentUser) {
+      const picUrl = currentUser.profilePicUrl || currentUser.profileImage || '';
+      const imgData = currentUser.profileImage || currentUser.profilePicUrl || '';
       setFormData({
         name: currentUser.name || '',
         phone: currentUser.phone || '',
         address: currentUser.address || '',
-        profilePicUrl: currentUser.profilePicUrl || ''
+        profilePicUrl: picUrl,
+        profileImage: imgData
       });
     }
   }, [currentUser?.uid]);
@@ -46,7 +48,70 @@ const Profile = () => {
   };
 
   const handleAvatarSelect = (url) => {
-    setFormData((prev) => ({ ...prev, profilePicUrl: url }));
+    setFormData((prev) => ({ 
+      ...prev, 
+      profilePicUrl: url,
+      profileImage: url 
+    }));
+  };
+
+  const compressImage = (file) => {
+    return new Promise((resolve, reject) => {
+      // Validate file size (max 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        reject(new Error("File size exceeds 5MB. Please upload a smaller image."));
+        return;
+      }
+
+      // Validate file type
+      const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+      if (!allowedTypes.includes(file.type)) {
+        reject(new Error("Invalid file type. Only JPG, PNG, and WEBP images are accepted."));
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const img = new Image();
+        img.src = event.target.result;
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          const maxDim = 300;
+          let width = img.width;
+          let height = img.height;
+
+          // Resize keeping aspect ratio
+          if (width > height) {
+            if (width > maxDim) {
+              height = Math.round((height * maxDim) / width);
+              width = maxDim;
+            }
+          } else {
+            if (height > maxDim) {
+              width = Math.round((width * maxDim) / height);
+              height = maxDim;
+            }
+          }
+
+          canvas.width = width;
+          canvas.height = height;
+
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, width, height);
+
+          // Get Base64 data URL at 0.7 JPEG quality
+          const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.7);
+          resolve(compressedDataUrl);
+        };
+        img.onerror = (err) => {
+          reject(new Error("Failed to load image for compression."));
+        };
+      };
+      reader.onerror = (err) => {
+        reject(new Error("Failed to read image file."));
+      };
+      reader.readAsDataURL(file);
+    });
   };
 
   const handleFileUpload = async (e) => {
@@ -54,25 +119,25 @@ const Profile = () => {
     if (!file) return;
     setUploading(true);
     try {
-      const storageRef = ref(storage, `profile_pics/${currentUser.uid}`);
-      await uploadBytes(storageRef, file);
-      const url = await getDownloadURL(storageRef);
-      setFormData((prev) => ({ ...prev, profilePicUrl: url }));
-      alert("Profile picture uploaded successfully!");
+      const base64Image = await compressImage(file);
+      setFormData((prev) => ({ 
+        ...prev, 
+        profilePicUrl: base64Image,
+        profileImage: base64Image
+      }));
+      alert("Profile picture processed successfully!");
     } catch (err) {
-      console.error("Storage upload failed, using local preview", err);
-      const localUrl = URL.createObjectURL(file);
-      setFormData((prev) => ({ ...prev, profilePicUrl: localUrl }));
-      alert("Firebase Storage is not enabled in your console. Using local preview temporarily. You can also select a default avatar below!");
+      console.error("Base64 conversion failed", err);
+      alert(err.message || "Failed to process profile image.");
     } finally {
       setUploading(false);
     }
   };
 
-  // Helper to convert Google Drive share links to direct web preview links
+  // Helper to convert Google Drive share/download links to direct web preview links
   const convertDriveUrl = (url) => {
     if (!url) return '';
-    if (url.includes('drive.google.com')) {
+    if (url.includes('drive.google.com') || url.includes('drive.usercontent.google.com')) {
       const regExp = /\/file\/d\/([a-zA-Z0-9_-]+)|id=([a-zA-Z0-9_-]+)/;
       const matches = url.match(regExp);
       if (matches) {
@@ -85,8 +150,19 @@ const Profile = () => {
     return url;
   };
 
+  // Helper to validate image URL by loading it using Image object
+  const validateImageLink = (url) => {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.onload = () => resolve(true);
+      img.onerror = () => resolve(false);
+      img.src = url;
+    });
+  };
+
   const handleUrlUpload = async () => {
     const rawUrl = imageUrlInput.trim();
+    console.log("[DEBUG] entered URL:", rawUrl);
     if (!rawUrl) {
       alert("Please enter a valid image URL first.");
       return;
@@ -94,35 +170,28 @@ const Profile = () => {
     
     // Auto-convert Google Drive links if necessary
     const urlToApply = convertDriveUrl(rawUrl);
+    console.log("[DEBUG] resolved URL for application:", urlToApply);
     setUrlUploading(true);
     
-    try {
-      // Attempt to fetch the image to upload it to Firebase Storage
-      const response = await fetch(urlToApply);
-      if (!response.ok) throw new Error("Failed to fetch image from URL");
-      
-      const blob = await response.blob();
-      if (!blob.type.startsWith('image/')) {
-        throw new Error("The URL does not point to a valid image.");
-      }
-      
-      const storageRef = ref(storage, `profile_pics/${currentUser.uid}`);
-      await uploadBytes(storageRef, blob);
-      const url = await getDownloadURL(storageRef);
-      
-      setFormData((prev) => ({ ...prev, profilePicUrl: url }));
-      setImageUrlInput('');
-      alert("Profile picture fetched and uploaded to storage successfully!");
-    } catch (err) {
-      console.warn("Failed to fetch image via browser (possibly CORS). Applying directly as image URL instead.", err);
-      
-      // Fallback: apply the URL directly to the profile picture
-      setFormData((prev) => ({ ...prev, profilePicUrl: urlToApply }));
-      setImageUrlInput('');
-      alert("Image URL applied! (Note: Could not upload to storage due to browser CORS/security policies, but it will be displayed using the external link.)");
-    } finally {
+    // Perform image validation by loading in browser
+    const isValid = await validateImageLink(urlToApply);
+    console.log("[DEBUG] validation result:", isValid);
+    
+    if (!isValid) {
+      alert("Failed to load image. Please verify that the URL is a direct link to a valid image file.");
       setUrlUploading(false);
+      return;
     }
+    
+    // Apply URL directly to both URL and Image state fields (Firebase Storage bypass)
+    setFormData((prev) => ({ 
+      ...prev, 
+      profilePicUrl: urlToApply,
+      profileImage: urlToApply
+    }));
+    setImageUrlInput('');
+    setUrlUploading(false);
+    alert("Image URL applied successfully!");
   };
 
   const handleSubmit = async (e) => {
@@ -134,7 +203,15 @@ const Profile = () => {
     setSaving(true);
     setSuccess(false);
     try {
-      await updateProfile(formData);
+      console.log("[DEBUG] Saving profile details to Firestore. Saved profilePicUrl:", formData.profilePicUrl);
+      const dataToSave = {
+        name: formData.name,
+        phone: formData.phone,
+        address: formData.address,
+        profilePicUrl: formData.profilePicUrl,
+        profileImage: formData.profileImage || formData.profilePicUrl
+      };
+      await updateProfile(dataToSave);
       setSuccess(true);
       setTimeout(() => setSuccess(false), 3000);
     } catch (err) {
@@ -146,6 +223,8 @@ const Profile = () => {
   };
 
   if (!currentUser) return <Loader fullPage />;
+
+  console.log("[DEBUG] Rendered image URL in profile preview:", formData.profilePicUrl);
 
   return (
     <div className="max-w-3xl mx-auto space-y-6 pb-24">
@@ -171,9 +250,9 @@ const Profile = () => {
           <h3 className="font-display text-sm font-bold text-slate-700">Profile Picture</h3>
           
           <div className="relative group h-32 w-32 rounded-full overflow-hidden border-4 border-slate-150 bg-slate-50 flex items-center justify-center">
-            {formData.profilePicUrl ? (
+            {formData.profileImage || formData.profilePicUrl ? (
               <img 
-                src={formData.profilePicUrl} 
+                src={formData.profileImage || formData.profilePicUrl} 
                 alt="Profile Preview" 
                 className="h-full w-full object-cover"
               />
@@ -193,7 +272,7 @@ const Profile = () => {
             </label>
           </div>
 
-          {uploading && <span className="text-xs text-primary-500 font-bold animate-pulse">Uploading file...</span>}
+          {uploading && <span className="text-xs text-primary-500 font-bold animate-pulse">Processing file...</span>}
 
           <p className="text-[10px] text-slate-400 text-center leading-relaxed">
             Hover and click the photo to upload a file, select a default avatar below, or paste a direct image URL.
@@ -321,7 +400,7 @@ const Profile = () => {
                   key={avatar.name}
                   onClick={() => handleAvatarSelect(avatar.url)}
                   className={`relative h-12 w-12 rounded-full overflow-hidden border-2 transition-all hover:scale-105 active:scale-95 ${
-                    formData.profilePicUrl === avatar.url 
+                    (formData.profileImage === avatar.url || formData.profilePicUrl === avatar.url)
                       ? 'border-primary-500 shadow-md ring-2 ring-primary-100' 
                       : 'border-slate-100'
                   }`}

@@ -93,9 +93,9 @@ const Navbar = () => {
                 )}
                 
                 <Link to="/profile" className="flex items-center gap-2 hover:opacity-85 transition-opacity" title="View Profile">
-                  {currentUser.profilePicUrl ? (
+                  {currentUser.profileImage || currentUser.profilePicUrl ? (
                     <img 
-                      src={currentUser.profilePicUrl} 
+                      src={currentUser.profileImage || currentUser.profilePicUrl} 
                       alt="Avatar" 
                       className="h-8 w-8 rounded-full object-cover border border-slate-200"
                     />
