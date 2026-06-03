@@ -29,7 +29,7 @@ const Profile = () => {
   const [saving, setSaving] = useState(false);
   const [success, setSuccess] = useState(false);
 
-  // Sync form state if context loads late
+  // Sync form state if context loads late or user changes (only runs once on mount/user load)
   useEffect(() => {
     if (currentUser) {
       setFormData({
@@ -39,7 +39,7 @@ const Profile = () => {
         profilePicUrl: currentUser.profilePicUrl || ''
       });
     }
-  }, [currentUser]);
+  }, [currentUser?.uid]);
 
   const handleChange = (e) => {
     setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
@@ -69,15 +69,36 @@ const Profile = () => {
     }
   };
 
+  // Helper to convert Google Drive share links to direct web preview links
+  const convertDriveUrl = (url) => {
+    if (!url) return '';
+    if (url.includes('drive.google.com')) {
+      const regExp = /\/file\/d\/([a-zA-Z0-9_-]+)|id=([a-zA-Z0-9_-]+)/;
+      const matches = url.match(regExp);
+      if (matches) {
+        const fileId = matches[1] || matches[2];
+        if (fileId) {
+          return `https://docs.google.com/uc?export=view&id=${fileId}`;
+        }
+      }
+    }
+    return url;
+  };
+
   const handleUrlUpload = async () => {
-    if (!imageUrlInput.trim()) {
+    const rawUrl = imageUrlInput.trim();
+    if (!rawUrl) {
       alert("Please enter a valid image URL first.");
       return;
     }
+    
+    // Auto-convert Google Drive links if necessary
+    const urlToApply = convertDriveUrl(rawUrl);
     setUrlUploading(true);
+    
     try {
       // Attempt to fetch the image to upload it to Firebase Storage
-      const response = await fetch(imageUrlInput);
+      const response = await fetch(urlToApply);
       if (!response.ok) throw new Error("Failed to fetch image from URL");
       
       const blob = await response.blob();
@@ -96,7 +117,7 @@ const Profile = () => {
       console.warn("Failed to fetch image via browser (possibly CORS). Applying directly as image URL instead.", err);
       
       // Fallback: apply the URL directly to the profile picture
-      setFormData((prev) => ({ ...prev, profilePicUrl: imageUrlInput }));
+      setFormData((prev) => ({ ...prev, profilePicUrl: urlToApply }));
       setImageUrlInput('');
       alert("Image URL applied! (Note: Could not upload to storage due to browser CORS/security policies, but it will be displayed using the external link.)");
     } finally {
