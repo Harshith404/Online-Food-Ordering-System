@@ -1,10 +1,10 @@
-# 🍽️ Online Food Ordering System — Full Project Description
+#Online Food Ordering System — Full Project Description
 
 > **DBMS Mini Project** | Frontend: React.js | Backend: Firebase
 
 ---
 
-## 📌 Project Overview
+##Project Overview
 
 The **Online Food Ordering System** is a full-stack web application that allows customers to browse restaurants, view menus, place orders, and track delivery status in real-time. The system supports multiple user roles — **Customer**, **Restaurant Admin**, and **Delivery Agent** — each with a dedicated interface.
 
@@ -12,7 +12,7 @@ The backend is powered by **Firebase** (Firestore + Auth + Storage + Realtime DB
 
 ---
 
-## 🎯 Objectives
+##Objectives
 
 - Allow customers to register, browse menus, and place food orders online
 - Enable restaurant admins to manage their menu, accept/reject orders
@@ -22,7 +22,7 @@ The backend is powered by **Firebase** (Firestore + Auth + Storage + Realtime DB
 
 ---
 
-## 👥 User Roles
+##User Roles
 
 | Role | Description |
 |------|-------------|
@@ -33,9 +33,9 @@ The backend is powered by **Firebase** (Firestore + Auth + Storage + Realtime DB
 
 ---
 
-## 🗂️ Folder Architecture
+## Folder Architecture
 
-### 📁 Frontend — React.js
+###Frontend — React.js
 
 ```
 frontend/
