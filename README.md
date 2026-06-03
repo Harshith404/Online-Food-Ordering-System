@@ -8,7 +8,7 @@
 
 The **Online Food Ordering System** is a full-stack web application that allows customers to browse restaurants, view menus, place orders, and track delivery status in real-time. The system supports multiple user roles — **Customer**, **Restaurant Admin**, and **Delivery Agent** — each with a dedicated interface.
 
-The backend is powered by **Firebase** (Firestore + Auth + Storage + Realtime DB), and the frontend is built using **React.js** with a clean component-based architecture.
+The backend is powered by **Firebase** (Firestore + Auth + Realtime DB), and the frontend is built using **React.js** with a clean component-based architecture.
 
 ---
 
@@ -27,7 +27,7 @@ The backend is powered by **Firebase** (Firestore + Auth + Storage + Realtime DB
 | Role | Description |
 |------|-------------|
 | **Customer** | Register/Login, Browse restaurants, Add to cart, Place orders, Track order |
-| **Restaurant Admin** | Manage menu items, View & accept orders, Update order status |
+| **Restaurant Admin** | Manage menu items, View & accept orders, Update order status, Assign delivery agents |
 | **Delivery Agent** | View assigned orders, Update delivery status |
 | **Super Admin** *(optional)* | Manage restaurants and users platform-wide |
 
@@ -41,7 +41,8 @@ The backend is powered by **Firebase** (Firestore + Auth + Storage + Realtime DB
 frontend/
 ├── public/
 │   ├── index.html
-│   └── favicon.ico
+│   ├── favicon.png              # Custom QuickBite Logo Favicon
+│   └── icons.svg
 │
 ├── src/
 │   ├── assets/                  # Images, icons, fonts
@@ -73,12 +74,12 @@ frontend/
 │   ├── pages/                   # Route-level Page Components
 │   │   ├── auth/
 │   │   │   ├── Login.jsx
-│   │   │   ├── Register.jsx
-│   │   │   └── ForgotPassword.jsx
+│   │   │   └── Register.jsx
+│   │   │
+│   │   ├── Profile.jsx          # Shared User Settings Page
 │   │   │
 │   │   ├── customer/
 │   │   │   ├── Home.jsx
-│   │   │   ├── RestaurantList.jsx
 │   │   │   ├── RestaurantMenu.jsx
 │   │   │   ├── Cart.jsx
 │   │   │   ├── Checkout.jsx
@@ -97,38 +98,28 @@ frontend/
 │   │
 │   ├── context/                 # React Context (Global State)
 │   │   ├── AuthContext.jsx
-│   │   ├── CartContext.jsx
-│   │   └── OrderContext.jsx
+│   │   └── CartContext.jsx
 │   │
 │   ├── hooks/                   # Custom React Hooks
-│   │   ├── useAuth.js
-│   │   ├── useCart.js
-│   │   ├── useOrders.js
-│   │   └── useRestaurants.js
+│   │   └── useAuth.js
 │   │
 │   ├── services/                # Firebase API Calls (Business Logic Layer)
-│   │   ├── authService.js
-│   │   ├── orderService.js
-│   │   ├── menuService.js
 │   │   ├── restaurantService.js
+│   │   ├── menuService.js
+│   │   ├── orderService.js
 │   │   └── userService.js
 │   │
 │   ├── firebase/                # Firebase Config & Initialization
-│   │   ├── config.js
-│   │   ├── firestore.js
-│   │   └── storage.js
+│   │   └── config.js
 │   │
 │   ├── routes/                  # App Routing
 │   │   └── AppRoutes.jsx
 │   │
 │   ├── utils/                   # Helper Functions
-│   │   ├── formatDate.js
-│   │   ├── formatPrice.js
-│   │   └── validators.js
+│   │   └── seedData.js          # Database seeding utility
 │   │
 │   ├── styles/                  # Global CSS / Tailwind config
-│   │   ├── global.css
-│   │   └── tailwind.config.js
+│   │   └── global.css
 │   │
 │   ├── App.jsx
 │   └── main.jsx
@@ -151,13 +142,7 @@ backend/
 │
 ├── firestore/
 │   ├── firestore.rules          # Security rules for Firestore
-│   ├── firestore.indexes.json   # Composite index definitions
-│   └── schema/                  # (Reference) Collection schema docs
-│       ├── users.md
-│       ├── restaurants.md
-│       ├── menu_items.md
-│       ├── orders.md
-│       └── delivery_agents.md
+│   └── firestore.indexes.json   # Composite index definitions
 │
 └── README.md
 ```
@@ -175,6 +160,8 @@ users/{userId}
 ├── phone: string
 ├── role: "customer" | "admin" | "delivery"
 ├── address: string
+├── profileImage: string (Base64 JPEG data URL or external link)
+├── profilePicUrl: string (Base64 JPEG data URL or external link)
 └── createdAt: timestamp
 ```
 
@@ -220,37 +207,39 @@ orders/{orderId}
 └── createdAt: timestamp
 ```
 
-### Collection: `cart` *(optional — can also be local state)*
-```
-cart/{userId}
-└── items: [
-    { itemId, name, quantity, price, restaurantId }
-    ]
-```
-
 ---
 
-## 🔑 Core Features
+## 🔑 Core & Premium Features
 
-### Customer
+### 👤 User Settings & Profile Pictures (Offline Friendly)
+- **Profile Configuration**: Accessible by all roles to configure personal information (Name, Phone, and Address).
+- **Default Avatar Grid**: Select from 6 pre-defined food-themed avatars (Chef, Delivery Rider, Pizza, Burger, Coffee, Dessert).
+- **External Image URLs**: Enter and validate direct image links (Unsplash, Cloudinary, etc.) with automatic Google Drive sharing link conversion and rendering safety checks.
+- **Compressed Base64 Uploads**: Bypasses Firebase Storage entirely. Compresses local file uploads to ~300x300 JPEG at 70% quality, generating light Base64 data URLs (10-30KB) stored directly in Firestore (fully compatible with free/Spark tier limits).
+
+### 🔑 Security & Controls
+- **Show/Hide Password Toggle**: Eye icon controls on Login and Register screens to toggle character visibility.
+- **Role-Based Routing**: Access-restricted dashboards for Customers, Restaurant Admins, and Delivery Agents.
+
+### 🛒 Customer Interface
 - Sign up / Login (Firebase Auth)
-- Browse restaurants with filters (cuisine, rating)
-- View menu of a restaurant
-- Add items to cart (same restaurant only)
-- Place order with delivery address
-- Real-time order status tracking
-- View order history
+- Browse restaurants with warm visual styling
+- View menus with availability indicators
+- Add items to cart (enforces single restaurant selection)
+- Place order with automatic address loading
+- Real-time order status tracking with timeline progression
+- View full order history
 
-### Restaurant Admin
-- Login with admin account
-- Dashboard with order statistics
-- Add / Edit / Delete menu items
-- View incoming orders in real-time
-- Accept / Reject / Update order status
+### 💼 Restaurant Admin Dashboard
+- Manage menus (Add, Edit, and Delete items)
+- View real-time incoming orders
+- Accept/Reject orders
+- Update preparation state
+- **Direct Rider Assignment**: Dropdown selector to assign delivery agents directly from the admin dashboard
 
-### Delivery Agent
-- Login and view assigned orders
-- Update delivery status (picked up → delivered)
+### 🚴 Delivery Agent Panel
+- Claim available orders in the area
+- Update statuses (Picked up → Delivered)
 - View delivery history
 
 ---
@@ -268,11 +257,11 @@ Checkout → Enter Address → Place Order
         ↓
 Order stored in Firestore (status: "pending")
         ↓
-Restaurant Admin sees order → Accepts it (status: "accepted")
+Restaurant Admin sees order → Accepts & Assigns Delivery Agent
         ↓
 Admin updates → "preparing" → "out_for_delivery"
         ↓
-Delivery Agent picks up → Updates (status: "delivered")
+Delivery Agent claims order → Updates (status: "delivered")
         ↓
 Customer sees real-time status update
 ```
@@ -283,15 +272,15 @@ Customer sees real-time status update
 
 | Layer | Technology |
 |-------|-----------|
-| Frontend | React.js (Vite), Tailwind CSS |
-| Routing | React Router v6 |
+| Frontend | React.js (Vite), Tailwind CSS v3 |
+| Routing | React Router v7 |
 | State Management | React Context API |
 | Backend | Firebase |
 | Database | Firestore (NoSQL) |
 | Auth | Firebase Authentication |
-| File Storage |
+| Storage | Base64 in Firestore (Spark Plan friendly) |
 | Real-time | Firestore onSnapshot listeners |
-| Hosting | Firebase Hosting |
+| Hosting | Vercel |
 
 ---
 
@@ -310,14 +299,14 @@ Customer sees real-time status update
 ```json
 {
   "dependencies": {
-    "react": "^18.x",
-    "react-dom": "^18.x",
-    "react-router-dom": "^6.x",
-    "firebase": "^10.x",
+    "react": "^19.x",
+    "react-dom": "^19.x",
+    "react-router-dom": "^7.x",
+    "firebase": "^12.x",
     "tailwindcss": "^3.x",
     "axios": "^1.x",
-    "react-toastify": "^9.x",
-    "react-icons": "^4.x"
+    "react-toastify": "^11.x",
+    "react-icons": "^5.x"
   }
 }
 ```
@@ -333,7 +322,7 @@ Customer sees real-time status update
 | **Relationships** | orders → users, orders → restaurants, menu_items → restaurants |
 | **Indexing** | Firestore composite indexes for order queries |
 | **Real-time Queries** | `onSnapshot` for live order tracking |
-| **Transactions** | Atomic order placement (decrement stock + create order) |
+| **Transactions / Batches** | Atomic order placement |
 | **Authentication** | Firebase Auth with role-based access |
 | **Security** | Firestore Security Rules |
 
@@ -343,6 +332,7 @@ Customer sees real-time status update
 
 ### Prerequisites
 - Node.js v18+
+- Firebase project created by Danush
 - `.env` file with Firebase config keys
 
 ### Frontend Setup
@@ -361,6 +351,16 @@ VITE_FIREBASE_STORAGE_BUCKET=your_storage_bucket
 VITE_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
 VITE_FIREBASE_APP_ID=your_app_id
 ```
+
+---
+
+## 👨‍💻 Team
+
+| Member | Role |
+|--------|------|
+| **Danush** | Backend — Firebase setup, Firestore schema, Security Rules |
+| **????** | Frontend — React.js UI, Pages, Components, Firebase integration |
+
 ---
 
 *Project for DBMS Course | Online Food Ordering System*
