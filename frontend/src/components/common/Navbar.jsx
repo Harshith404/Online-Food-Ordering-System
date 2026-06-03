@@ -92,12 +92,25 @@ const Navbar = () => {
                   </Link>
                 )}
                 
-                <span className="hidden lg:inline text-sm font-medium text-slate-500">
-                  Welcome, <strong className="text-slate-700">{currentUser.name}</strong>
-                  <span className="ml-1 rounded bg-slate-100 px-1.5 py-0.5 text-xs font-semibold capitalize text-slate-600">
-                    {currentUser.role}
+                <Link to="/profile" className="flex items-center gap-2 hover:opacity-85 transition-opacity" title="View Profile">
+                  {currentUser.profilePicUrl ? (
+                    <img 
+                      src={currentUser.profilePicUrl} 
+                      alt="Avatar" 
+                      className="h-8 w-8 rounded-full object-cover border border-slate-200"
+                    />
+                  ) : (
+                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-100 text-slate-550 border border-slate-200 text-sm">
+                      👤
+                    </div>
+                  )}
+                  <span className="hidden lg:inline text-sm font-medium text-slate-500">
+                    Welcome, <strong className="text-slate-700">{currentUser.name || currentUser.email?.split('@')[0]}</strong>
+                    <span className="ml-1 rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-semibold capitalize text-slate-600">
+                      {currentUser.role}
+                    </span>
                   </span>
-                </span>
+                </Link>
 
                 <button
                   onClick={handleLogout}

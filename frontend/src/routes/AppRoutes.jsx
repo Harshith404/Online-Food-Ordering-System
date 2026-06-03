@@ -6,6 +6,7 @@ import useAuth from '../hooks/useAuth';
 // Auth Pages
 import Login from '../pages/auth/Login';
 import Register from '../pages/auth/Register';
+import Profile from '../pages/Profile';
 
 // Customer Pages
 import Home from '../pages/customer/Home';
@@ -103,6 +104,13 @@ const AppRoutes = () => {
       <Route path="/delivery/history" element={
         <ProtectedRoute allowedRoles={['delivery']}>
           <DeliveryHistory />
+        </ProtectedRoute>
+      } />
+
+      {/* Shared routes */}
+      <Route path="/profile" element={
+        <ProtectedRoute allowedRoles={['customer', 'admin', 'delivery']}>
+          <Profile />
         </ProtectedRoute>
       } />
 

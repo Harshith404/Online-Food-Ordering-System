@@ -112,13 +112,21 @@ export const AuthProvider = ({ children }) => {
     return unsubscribe;
   }, []);
 
+  const updateProfile = async (data) => {
+    if (!currentUser) return;
+    const userRef = doc(db, 'users', currentUser.uid);
+    await setDoc(userRef, data, { merge: true });
+    setCurrentUser((prev) => ({ ...prev, ...data }));
+  };
+
   const value = {
     currentUser,
     loading,
     registerUser,
     login,
     logout,
-    resetPassword
+    resetPassword,
+    updateProfile
   };
 
   return (
