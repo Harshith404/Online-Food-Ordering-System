@@ -72,7 +72,7 @@ export const orderService = {
   subscribeToAvailableDeliveries: (callback) => {
     const q = query(
       collection(db, 'orders'),
-      where('status', 'in', ['accepted', 'preparing'])
+      where('status', 'in', ['accepted', 'preparing', 'out_for_delivery'])
     );
     return onSnapshot(q, (querySnapshot) => {
       const orders = [];
@@ -106,6 +106,15 @@ export const orderService = {
 
   // Claim a delivery
   claimDelivery: async (orderId, agentId) => {
+    const orderRef = doc(db, 'orders', orderId);
+    await updateDoc(orderRef, {
+      deliveryAgentId: agentId,
+      status: 'out_for_delivery'
+    });
+  },
+
+  // Assign a delivery agent to an order (by Restaurant Admin)
+  assignDeliveryAgent: async (orderId, agentId) => {
     const orderRef = doc(db, 'orders', orderId);
     await updateDoc(orderRef, {
       deliveryAgentId: agentId,

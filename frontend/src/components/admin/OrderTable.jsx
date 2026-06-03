@@ -1,8 +1,34 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { formatDate } from '../../utils/formatDate';
 import { formatPrice } from '../../utils/formatPrice';
+import { userService } from '../../services/userService';
+import { orderService } from '../../services/orderService';
 
 const OrderTable = ({ orders, onStatusUpdate }) => {
+  const [riders, setRiders] = useState([]);
+
+  useEffect(() => {
+    const fetchRiders = async () => {
+      try {
+        const list = await userService.getDeliveryAgents();
+        setRiders(list);
+      } catch (err) {
+        console.error("Error fetching riders", err);
+      }
+    };
+    fetchRiders();
+  }, []);
+
+  const handleAssignRider = async (orderId, agentId) => {
+    try {
+      await orderService.assignDeliveryAgent(orderId, agentId);
+      alert("Rider assigned successfully!");
+    } catch (err) {
+      console.error("Error assigning rider", err);
+      alert("Failed to assign rider.");
+    }
+  };
+
   const getStatusStyle = (status) => {
     switch (status) {
       case 'pending': return 'bg-amber-100 text-amber-700';
@@ -71,52 +97,76 @@ const OrderTable = ({ orders, onStatusUpdate }) => {
                 </span>
               </td>
               <td className="px-6 py-4 text-right">
-                <div className="flex items-center justify-end gap-2">
-                  {order.status === 'pending' && (
-                    <>
+                <div className="flex flex-col items-end gap-2">
+                  <div className="flex items-center justify-end gap-2">
+                    {order.status === 'pending' && (
+                      <>
+                        <button
+                          onClick={() => onStatusUpdate(order.id, 'accepted')}
+                          className="rounded-lg bg-emerald-50 hover:bg-emerald-100 px-3 py-1.5 text-xs font-bold text-emerald-700 transition-colors"
+                        >
+                          Accept
+                        </button>
+                        <button
+                          onClick={() => onStatusUpdate(order.id, 'cancelled')}
+                          className="rounded-lg bg-rose-50 hover:bg-rose-100 px-3 py-1.5 text-xs font-bold text-rose-700 transition-colors"
+                        >
+                          Reject
+                        </button>
+                      </>
+                    )}
+
+                    {order.status === 'accepted' && (
                       <button
-                        onClick={() => onStatusUpdate(order.id, 'accepted')}
-                        className="rounded-lg bg-emerald-50 hover:bg-emerald-100 px-3 py-1.5 text-xs font-bold text-emerald-700 transition-colors"
+                        onClick={() => onStatusUpdate(order.id, 'preparing')}
+                        className="rounded-lg bg-primary-500 hover:bg-primary-600 px-3 py-1.5 text-xs font-bold text-white shadow-sm transition-colors"
                       >
-                        Accept
+                        Start Preparing
                       </button>
+                    )}
+
+                    {order.status === 'preparing' && (
                       <button
-                        onClick={() => onStatusUpdate(order.id, 'cancelled')}
-                        className="rounded-lg bg-rose-50 hover:bg-rose-100 px-3 py-1.5 text-xs font-bold text-rose-700 transition-colors"
+                        onClick={() => onStatusUpdate(order.id, 'out_for_delivery')}
+                        className="rounded-lg bg-indigo-500 hover:bg-indigo-600 px-3 py-1.5 text-xs font-bold text-white shadow-sm transition-colors"
                       >
-                        Reject
+                        Out for Delivery
                       </button>
-                    </>
-                  )}
+                    )}
 
-                  {order.status === 'accepted' && (
-                    <button
-                      onClick={() => onStatusUpdate(order.id, 'preparing')}
-                      className="rounded-lg bg-primary-500 hover:bg-primary-600 px-3 py-1.5 text-xs font-bold text-white shadow-sm transition-colors"
-                    >
-                      Start Preparing
-                    </button>
-                  )}
+                    {order.status === 'out_for_delivery' && (
+                      <span className="text-xs text-slate-400 font-medium">
+                        {order.deliveryAgentId ? 'Out for Delivery' : 'Awaiting Driver Claim...'}
+                      </span>
+                    )}
 
-                  {order.status === 'preparing' && (
-                    <button
-                      onClick={() => onStatusUpdate(order.id, 'out_for_delivery')}
-                      className="rounded-lg bg-indigo-500 hover:bg-indigo-600 px-3 py-1.5 text-xs font-bold text-white shadow-sm transition-colors"
-                    >
-                      Out for Delivery
-                    </button>
-                  )}
+                    {order.status === 'delivered' && (
+                      <span className="text-xs text-emerald-500 font-bold">Completed</span>
+                    )}
 
-                  {order.status === 'out_for_delivery' && (
-                    <span className="text-xs text-slate-400 font-medium">On delivery...</span>
-                  )}
+                    {order.status === 'cancelled' && (
+                      <span className="text-xs text-rose-500 font-bold">Cancelled</span>
+                    )}
+                  </div>
 
-                  {order.status === 'delivered' && (
-                    <span className="text-xs text-emerald-500 font-bold">Completed</span>
-                  )}
-
-                  {order.status === 'cancelled' && (
-                    <span className="text-xs text-rose-500 font-bold">Cancelled</span>
+                  {/* Rider Assignment Dropdown */}
+                  {!order.deliveryAgentId && ['accepted', 'preparing', 'out_for_delivery'].includes(order.status) && riders.length > 0 && (
+                    <div className="mt-1">
+                      <select
+                        onChange={(e) => {
+                          if (e.target.value) {
+                            handleAssignRider(order.id, e.target.value);
+                          }
+                        }}
+                        className="rounded-lg border border-slate-200 px-2 py-1 text-xs text-slate-600 bg-white shadow-sm focus:border-primary-500 outline-none cursor-pointer"
+                        defaultValue=""
+                      >
+                        <option value="" disabled>Assign Rider</option>
+                        {riders.map((r) => (
+                          <option key={r.id} value={r.id}>{r.name}</option>
+                        ))}
+                      </select>
+                    </div>
                   )}
                 </div>
               </td>
