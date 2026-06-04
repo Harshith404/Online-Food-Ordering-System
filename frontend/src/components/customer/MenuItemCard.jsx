@@ -49,7 +49,7 @@ const MenuItemCard = ({ item, restaurant, onConflict }) => {
             {formatPrice(price)}
           </span>
         </div>
-        <p className="text-sm text-slate-500 line-clamp-2 mb-3">{description || 'No description available.'}</p>
+        <p className="text-sm text-slate-500 mb-3 break-words whitespace-normal">{description || 'No description available.'}</p>
         <span className="inline-block rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-500 capitalize">
           {category}
         </span>
